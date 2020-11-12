@@ -44,6 +44,14 @@ function WhatsappLine(date, time, person, text) {
     this.text = text;
 };
 
+//UserData object constructor
+function UserData(user, messages, word_count) {   
+  this.user = user;
+  this.messages = messages;
+  this.word_count = word_count;
+};
+
+
 //Get position of nth occurrance of given substring
 function getPosition(string, subString, index) {    
     return string.split(subString, index).join(subString).length;
@@ -55,44 +63,38 @@ function WordCount(str) {
 }
 
 //Gets unique persons, only works with WhatsappLine Objects
-function getUniqueNames(arr1){       
+function getUniqueNames(whatsapp_lines){       
     let counter = {}
-    for(let i=0; i< arr1.length; i++){
-        let val = arr1[i].person
+    for(let i=0; i< whatsapp_lines.length; i++){
+        let val = whatsapp_lines[i].person
         counter[val] =  (counter[val] || 0) +1;
     }
-    console.log(counter)
+    return counter //returns {name1: ammount_texts1, name2: ammount_texts2,...}
 }
 
-function tableCreate() {
-    var body = document.getElementsByTagName('body')[0];
-    var tbl = document.createElement('table');
-    tbl.style.width = '100%';
-    tbl.setAttribute('border', '1');
-    var tbdy = document.createElement('tbody');
-    for (var i = 0; i < 3; i++) {
-      var tr = document.createElement('tr');
-      for (var j = 0; j < 2; j++) {
-        if (i == 2 && j == 1) {
-          break
-        } else {
-          var td = document.createElement('td');
-          td.appendChild(document.createTextNode('\u0020'))
-          i == 1 && j == 1 ? td.setAttribute('rowSpan', '2') : null;
-          tr.appendChild(td)
-        }
-      }
-      tbdy.appendChild(tr);
-    }
-    tbl.appendChild(tbdy);
-    body.appendChild(tbl)
+//Gets word count for each user
+function getWordCount(whatsapp_lines){       
+  let counter = {}
+  for(let i=0; i< whatsapp_lines.length; i++){
+      let val = whatsapp_lines[i].person
+      let ammoun_words = WordCount(whatsapp_lines[i].text)
+      counter[val] =  (counter[val] || 0) + ammoun_words;
+  }
+  return counter //returns {name1: ammount_words1, name2: ammount_words2,...}
 }
 
+function structureData(unique_data, user_word_count){
+//turn {name1: ammount_texts1, name2: ammount_texts2,...} => [{user: name1, texts: ammount_texts1},{user: name2, texts: ammount, texts}]
+ let userDataDB = [];
+ let i =0;
+ for(let key in unique_data){
+   userDataDB[i] = new UserData(key, unique_data[key], user_word_count[key])
+   i++
+ }
+ console.log(userDataDB)
+}
 
-
-
-
-
+//Runs the whole operation => opens file, reads it, and runs operations after finishing
 function readData(file){
 
 //Opens file and reads it
@@ -130,13 +132,9 @@ readInterface.on('line', function(line) {               //Reads file line by lin
 
 //After it has read the file do this:
 readInterface.on('close', function() {
-    // console.log(listOfLines[4].text)
-    getUniqueNames(listOfLines)
+    let x = getUniqueNames(listOfLines);
+    let y = getWordCount(listOfLines);
+    structureData(x,y);
     let i =0;
-    // for(let x in listOfLines){
-    // console.log(listOfLines[i].person)
-    // i++;
-    // }
-    // console.log(getPosition(listOfLines[55].text, ":",1))
 });
 } //<-- end of readData()
