@@ -107,24 +107,42 @@ const readInterface = rl.createInterface({
 let listOfLines = [];
 let i = 0;
 let counter = 0;
+let android = 0;
 //Reads file line by line and creates objects out of each line
 readInterface.on('line', function(line) {               //Reads file line by line
-    let firstCharacter = line.charAt(0);                //Used to check if line is an actual line or something else
-    let startOfName = line.indexOf("-") +2;
-    let endOfName = getPosition(line, ":", 2) ;
-    let endOfHour = startOfName -3;
-    let lineDate = line.substring(0, 6);
-    let lineTime = line.substring(9, endOfHour);
-    let lineName = line.substring(startOfName, endOfName);
-    let lineText = line.substring(endOfName+1);
+    let firstCharacter = line.charAt(0);                //Used to check if line is an android line or an iPhone line... or something else
+    let startOfName, endOfName, endOfHour, lineDate, lineTime, lineName, lineText, condition;
+
+    if((firstCharacter != "[" && i == 0) || android == 1){
+    android = 1;
+    startOfName = line.indexOf("-") +2;
+    endOfName = getPosition(line, ":", 2) ;
+    endOfHour = startOfName -3;
+    lineDate = line.substring(0, 6);
+    lineTime = line.substring(9, endOfHour);
+    lineName = line.substring(startOfName, endOfName);
+    lineText = line.substring(endOfName+1);
+    condition = lineName.length < 20 && (line.includes(":")) && (/^.*?[0-9]$/.test(firstCharacter)) && (firstCharacter != " ") && (line.includes("/")) && (!line.includes("left")) && (!line.includes("added"));
+    } else{
+    android = 0;
+    startOfName = line.indexOf("]") +2;
+    endOfName = getPosition(line, ":", 3) ;
+    endOfHour = startOfName -3;
+    lineDate = line.substring(1, 6);
+    lineTime = line.substring(13, endOfHour);
+    lineName = line.substring(startOfName, endOfName);
+    lineText = line.substring(endOfName+1);
+    condition = lineName.length < 20 && (line.includes(":")) && (firstCharacter == "[") && (firstCharacter != " ") && (line.includes("/")) && (!line.includes("left")) && (!line.includes("added"));
+    }
     
     // console.log(firstCharacter)
-    if(lineName.length < 20 && (line.includes(":")) && (/^.*?[0-9]$/.test(firstCharacter)) && (firstCharacter != " ") && (line.includes("/")) && (!line.includes("left")) && (!line.includes("added")) ) {        //if lineName is too long it means that the line is most likely a group statement (someona has been added,  or has left), as is if it does not have ":" or the first character isn't an integer
+    if(condition) {        //if lineName is too long it means that the line is most likely a group statement (someona has been added,  or has left), as is if it does not have ":" or the first character isn't an integer
     listOfLines[i] = new WhatsappLine(lineDate,lineTime, lineName, lineText);
     i++;
     }  
     if((Number(firstCharacter) == NaN) || firstCharacter == " ") {              //Some text overflows to next line so it needs to be added to the last line's .text
     let previousLine = i-1;
+    console.log()
     listOfLines[previousLine].text = listOfLines[previousLine].text.concat(line);
     // console.log(firstCharacter);
     }
