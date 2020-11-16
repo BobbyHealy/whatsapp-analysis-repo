@@ -8,7 +8,7 @@ var formidable = require('formidable');
 //Main
 http.createServer(function (req, res) {             //Creates Server
     //   res.writeHead(200, {'Content-Type': 'text/html'});
-    //   var myReadStream = fs.createReadStream(__dirname + '/index.html', 'utf8')
+    //   
     if (req.url == '/fileupload') {
         var form = new formidable.IncomingForm();
         form.parse(req, function (err, fields, files) {
@@ -17,14 +17,14 @@ http.createServer(function (req, res) {             //Creates Server
           fs.rename(oldpath, newpath, function (err) {
             if (err) throw err;
             res.write('File uploaded and moved!');
-            // let file = newpath;
             readData(newpath);
-            // tableCreate();
             res.end();
           });
      });
       } else {
         res.writeHead(200, {'Content-Type': 'text/html'});
+        /*var myReadStream = fs.createReadStream(__dirname + '/index.html', 'utf8');
+        myReadStream.pipe(res);*/
         res.write('<form action="fileupload" method="post" enctype="multipart/form-data">');
         res.write('<input type="file" name="filetoupload"><br>');
         res.write('<input type="submit">');
@@ -91,12 +91,12 @@ function structureData(unique_data, user_word_count){
    userDataDB[i] = new UserData(key, unique_data[key], user_word_count[key])
    i++
  }
- console.log(userDataDB)
+ return userDataDB
 }
 
 //Runs the whole operation => opens file, reads it, and runs operations after finishing
 function readData(file){
-
+let answer = []
 //Opens file and reads it
 const readInterface = rl.createInterface({   
     input: fs.createReadStream(file),
@@ -128,31 +128,31 @@ readInterface.on('line', function(line) {               //Reads file line by lin
     startOfName = line.indexOf("]") +2;
     endOfName = getPosition(line, ":", 3) ;
     endOfHour = startOfName -3;
-    lineDate = line.substring(1, 6);
+    lineDate = line.substring(1, 6); 
     lineTime = line.substring(13, endOfHour);
     lineName = line.substring(startOfName, endOfName);
     lineText = line.substring(endOfName+1);
     condition = lineName.length < 20 && (line.includes(":")) && (firstCharacter == "[") && (firstCharacter != " ") && (line.includes("/")) && (!line.includes("left")) && (!line.includes("added"));
     }
     
-    // console.log(firstCharacter)
     if(condition) {        //if lineName is too long it means that the line is most likely a group statement (someona has been added,  or has left), as is if it does not have ":" or the first character isn't an integer
     listOfLines[i] = new WhatsappLine(lineDate,lineTime, lineName, lineText);
+    // console.log(listOfLines[i]); // <-- Test WhatsappLine Objects
     i++;
     }  
     if((Number(firstCharacter) == NaN) || firstCharacter == " ") {              //Some text overflows to next line so it needs to be added to the last line's .text
     let previousLine = i-1;
     console.log()
     listOfLines[previousLine].text = listOfLines[previousLine].text.concat(line);
-    // console.log(firstCharacter);
     }
 });
 
 //After it has read the file do this:
-readInterface.on('close', function() {
+    readInterface.on('close', function() {
     let x = getUniqueNames(listOfLines);
     let y = getWordCount(listOfLines);
-    structureData(x,y);
-    let i =0;
+    answer = (structureData(x,y));
+    //return answer;
+    console.log(answer)
 });
 } //<-- end of readData()
