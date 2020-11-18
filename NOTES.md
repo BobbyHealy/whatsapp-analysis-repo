@@ -5,4 +5,4 @@ git commit -- commits changes in local repository
 git push -- pushes changes to github (or remote work manager) 
 git push origin --> origin
 
-## more notes
+## more notes 
