@@ -96,7 +96,7 @@ function structureData(unique_data, user_word_count){
 
 //Runs the whole operation => opens file, reads it, and runs operations after finishing
 function readData(file){
-let answer = []
+let answer;
 //Opens file and reads it
 const readInterface = rl.createInterface({   
     input: fs.createReadStream(file),
@@ -104,6 +104,8 @@ const readInterface = rl.createInterface({
     console: false,
     terminal: false
 });
+
+
 let listOfLines = [];
 let i = 0;
 let counter = 0;
@@ -148,11 +150,12 @@ readInterface.on('line', function(line) {               //Reads file line by lin
 });
 
 //After it has read the file do this:
-    readInterface.on('close', function() {
+  readInterface.on('close', function() {
     let x = getUniqueNames(listOfLines);
     let y = getWordCount(listOfLines);
     answer = (structureData(x,y));
-    //return answer;
-    console.log(answer)
-});
+    console.log(answer);
+    //return answer
+  });
+console.log(answer);
 } //<-- end of readData()
