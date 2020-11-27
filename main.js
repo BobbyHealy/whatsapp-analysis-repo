@@ -6,32 +6,38 @@ const { count } = require('console');
 var formidable = require('formidable');
 
 //Main
+fs.readFile('index.html', function (err, html) {
+  if (err) {
+      throw err; 
+  }
 http.createServer(function (req, res) {             //Creates Server
-    //   res.writeHead(200, {'Content-Type': 'text/html'});
-    //   
-    if (req.url == '/fileupload') {
-        var form = new formidable.IncomingForm();
-        form.parse(req, function (err, fields, files) {
-          var oldpath = files.filetoupload.path;
-          var newpath = __dirname + '\\files\\' + files.filetoupload.name;
-          fs.rename(oldpath, newpath, function (err) {
-            if (err) throw err;
-            res.write('File uploaded and moved!');
-            readData(newpath);
-            res.end();
+    res.writeHead(200, {'Content-Type': 'text/html'});
+    res.write(html);
+    //res.end();
+    //document.getElementById('submit').addEventListener('click', submitChat);
+     if (req.url == '/fileupload') {
+       var form = new formidable.IncomingForm();
+         form.parse(req, function (err, fields, files) {
+         var oldpath = files.filetoupload.path;
+         var newpath = __dirname + '\\files\\' + files.filetoupload.name;
+         fs.rename(oldpath, newpath, function (err) {
+          if (err) throw err;
+          res.write('File uploaded and moved!');
+          let whatsappLines;
+          readData(newpath).then(function(result){console.log(result)});
+          console.log(whatsappLines);
+          res.end();
           });
-     });
-      } else {
-        res.writeHead(200, {'Content-Type': 'text/html'});
-        /*var myReadStream = fs.createReadStream(__dirname + '/index.html', 'utf8');
-        myReadStream.pipe(res);*/
+        });
+     } else {
         res.write('<form action="fileupload" method="post" enctype="multipart/form-data">');
         res.write('<input type="file" name="filetoupload"><br>');
         res.write('<input type="submit">');
         res.write('</form>');
         return res.end();
-      }
+    }
     }).listen(8080);
+  });
 
 
 //Functions
@@ -51,6 +57,19 @@ function UserData(user, messages, word_count) {
   this.word_count = word_count;
 };
 
+function submitChat(){
+         var form = new formidable.IncomingForm();
+         form.parse(req, function (err, fields, files) {
+         var oldpath = files.filetoupload.path;
+         var newpath = __dirname + '\\files\\' + files.filetoupload.name;
+         fs.rename(oldpath, newpath, function (err) {
+           if (err) throw err;
+           res.write('File uploaded and moved!');
+           readData(newpath).then(function(result){console.log(result)});
+           res.end();
+          })
+        })
+}
 
 //Get position of nth occurrance of given substring
 function getPosition(string, subString, index) {    
@@ -96,66 +115,70 @@ function structureData(unique_data, user_word_count){
 
 //Runs the whole operation => opens file, reads it, and runs operations after finishing
 function readData(file){
-let answer;
-//Opens file and reads it
-const readInterface = rl.createInterface({   
-    input: fs.createReadStream(file),
-    output: process.stdout,
-    console: false,
-    terminal: false
-});
+    return new Promise((res, rej) => {
+      let answer;
+      //Opens file and reads it
+      const readInterface = rl.createInterface({   
+        input: fs.createReadStream(file),
+        output: process.stdout,
+        console: false,
+        terminal: false
+      });
 
 
-let listOfLines = [];
-let i = 0;
-let counter = 0;
-let android = 0;
-//Reads file line by line and creates objects out of each line
-readInterface.on('line', function(line) {               //Reads file line by line
-    let firstCharacter = line.charAt(0);                //Used to check if line is an android line or an iPhone line... or something else
-    let startOfName, endOfName, endOfHour, lineDate, lineTime, lineName, lineText, condition;
+      let listOfLines = [];
+      let i = 0;
+      let counter = 0;
+      let android = 0;
 
-    if((firstCharacter != "[" && i == 0) || android == 1){
-    android = 1;
-    startOfName = line.indexOf("-") +2;
-    endOfName = getPosition(line, ":", 2) ;
-    endOfHour = startOfName -3;
-    lineDate = line.substring(0, 6);
-    lineTime = line.substring(9, endOfHour);
-    lineName = line.substring(startOfName, endOfName);
-    lineText = line.substring(endOfName+1);
-    condition = lineName.length < 20 && (line.includes(":")) && (/^.*?[0-9]$/.test(firstCharacter)) && (firstCharacter != " ") && (line.includes("/")) && (!line.includes("left")) && (!line.includes("added"));
-    } else{
-    android = 0;
-    startOfName = line.indexOf("]") +2;
-    endOfName = getPosition(line, ":", 3) ;
-    endOfHour = startOfName -3;
-    lineDate = line.substring(1, 6); 
-    lineTime = line.substring(13, endOfHour);
-    lineName = line.substring(startOfName, endOfName);
-    lineText = line.substring(endOfName+1);
-    condition = lineName.length < 20 && (line.includes(":")) && (firstCharacter == "[") && (firstCharacter != " ") && (line.includes("/")) && (!line.includes("left")) && (!line.includes("added"));
-    }
-    
-    if(condition) {        //if lineName is too long it means that the line is most likely a group statement (someona has been added,  or has left), as is if it does not have ":" or the first character isn't an integer
-    listOfLines[i] = new WhatsappLine(lineDate,lineTime, lineName, lineText);
-    // console.log(listOfLines[i]); // <-- Test WhatsappLine Objects
-    i++;
-    }  
-    if((Number(firstCharacter) == NaN) || firstCharacter == " ") {              //Some text overflows to next line so it needs to be added to the last line's .text
-    let previousLine = i-1;
-    console.log()
-    listOfLines[previousLine].text = listOfLines[previousLine].text.concat(line);
-    }
-});
+      //Reads file line by line and creates objects out of each line
+      readInterface
+      .on('line', function(line) {               //Reads file line by line
+      let firstCharacter = line.charAt(0);                //Used to check if line is an android line or an iPhone line... or something else
+      let startOfName, endOfName, endOfHour, lineDate, lineTime, lineName, lineText, condition;
 
-//After it has read the file do this:
-  readInterface.on('close', function() {
-    let x = getUniqueNames(listOfLines);
-    let y = getWordCount(listOfLines);
-    answer = (structureData(x,y));
-    console.log(answer);
-    //return answer
-  });
-console.log(answer);
+      if((firstCharacter != "[" && i == 0) || android == 1){
+      android = 1;
+      startOfName = line.indexOf("-") +2;
+      endOfName = getPosition(line, ":", 2) ;
+      endOfHour = startOfName -3;
+      lineDate = line.substring(0, 6);
+      lineTime = line.substring(9, endOfHour);
+      lineName = line.substring(startOfName, endOfName);
+      lineText = line.substring(endOfName+1);
+      condition = lineName.length < 20 && (line.includes(":")) && (/^.*?[0-9]$/.test(firstCharacter)) && (firstCharacter != " ") && (line.includes("/")) && (!line.includes("left")) && (!line.includes("added"));
+      } else{
+      android = 0;
+      startOfName = line.indexOf("]") +2;
+      endOfName = getPosition(line, ":", 3) ;
+      endOfHour = startOfName -3;
+      lineDate = line.substring(1, 6); 
+      lineTime = line.substring(13, endOfHour);
+      lineName = line.substring(startOfName, endOfName);
+      lineText = line.substring(endOfName+1);
+      condition = lineName.length < 20 && (line.includes(":")) && (firstCharacter == "[") && (firstCharacter != " ") && (line.includes("/")) && (!line.includes("left")) && (!line.includes("added"));
+      }
+      
+      if(condition) {        //if lineName is too long it means that the line is most likely a group statement (someona has been added,  or has left), as is if it does not have ":" or the first character isn't an integer
+      listOfLines[i] = new WhatsappLine(lineDate,lineTime, lineName, lineText);
+      // console.log(listOfLines[i]); // <-- Test WhatsappLine Objects
+      i++;
+      }  
+      if((Number(firstCharacter) == NaN) || firstCharacter == " ") {              //Some text overflows to next line so it needs to be added to the last line's .text
+      let previousLine = i-1;
+      listOfLines[previousLine].text = listOfLines[previousLine].text.concat(line);
+      }
+    })
+
+  //After it has read the file do this:
+    .on('close', function() {
+      let x = getUniqueNames(listOfLines);
+      let y = getWordCount(listOfLines);
+      //answer = (structureData(x,y));
+      //console.log(answer);
+      res(listOfLines)
+    })
+
+  //console.log(listOfLines);
+  })
 } //<-- end of readData()
